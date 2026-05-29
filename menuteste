@@ -1,6 +1,6 @@
+-- 🔥 ILHA BELA ROLEPLAY - MENU PREMIUM 2026
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local Camera = workspace.CurrentCamera
 local LP = Players.LocalPlayer
 
@@ -18,11 +18,11 @@ local ESPs = {}
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
 
--- ==================== MENU ESTILO DA HOOD ====================
+-- MENU
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 520, 0, 620)
-Main.Position = UDim2.new(0.5, -260, 0.5, -310)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+Main.Size = UDim2.new(0, 400, 0, 620)
+Main.Position = UDim2.new(0.5, -200, 0.15, 0)
+Main.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
@@ -30,14 +30,13 @@ Main.Parent = ScreenGui
 
 local Stroke = Instance.new("UIStroke")
 Stroke.Color = Color3.fromRGB(180, 0, 255)
-Stroke.Thickness = 2
+Stroke.Thickness = 3
 Stroke.Parent = Main
 
 local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 12)
+Corner.CornerRadius = UDim.new(0, 16)
 Corner.Parent = Main
 
--- Título
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 70)
 Title.BackgroundColor3 = Color3.fromRGB(30, 0, 60)
@@ -47,45 +46,27 @@ Title.TextScaled = true
 Title.Font = Enum.Font.GothamBlack
 Title.Parent = Main
 
--- Sidebar (categorias)
-local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0, 140, 1, -70)
-Sidebar.Position = UDim2.new(0, 0, 0, 70)
-Sidebar.BackgroundColor3 = Color3.fromRGB(20, 20, 27)
-Sidebar.Parent = Main
-
-local SidebarCorner = Instance.new("UICorner", Sidebar)
-SidebarCorner.CornerRadius = UDim.new(0, 12)
-
--- Conteúdo
-local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1, -150, 1, -80)
-Content.Position = UDim2.new(0, 150, 0, 80)
-Content.BackgroundTransparency = 1
-Content.Parent = Main
-
--- ==================== TOGGLES ====================
-local y = 10
+local y = 90
 local function AddToggle(name, default, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.95, 0, 0, 50)
-    btn.Position = UDim2.new(0.025, 0, 0, y)
+    btn.Size = UDim2.new(0.9, 0, 0, 52)
+    btn.Position = UDim2.new(0.05, 0, 0, y)
     btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    btn.Text = "   " .. name
+    btn.Text = "   " .. name .. (default and " ✅" or " ❌")
     btn.TextColor3 = Color3.new(1,1,1)
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.TextScaled = true
     btn.Font = Enum.Font.GothamSemibold
-    btn.Parent = Content
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    btn.Parent = Main
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 12)
 
     local state = default
     btn.MouseButton1Click:Connect(function()
         state = not state
-        btn.Text = (state and "   ✅ " or "   ❌ ") .. name
+        btn.Text = "   " .. name .. (state and " ✅" or " ❌")
         callback(state)
     end)
-    y = y + 60
+    y = y + 62
 end
 
 AddToggle("ESP Box", true, function(v) Config.ESP_Box = v end)
@@ -96,5 +77,106 @@ AddToggle("Names", true, function(v) Config.Names = v end)
 AddToggle("Auto Interact", true, function(v) Config.AutoInteract = v end)
 AddToggle("Noclip", false, function(v) Config.Noclip = v end)
 
+-- ESP
+RunService.RenderStepped:Connect(function()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr == LP or not plr.Character or not plr.Character:FindFirstChild("Head") then continue end
+
+        local head = plr.Character.Head
+        local screen, onScreen = Camera:WorldToViewportPoint(head.Position)
+        local dist = LP.Character and LP.Character:FindFirstChild("Head") and (head.Position - LP.Character.Head.Position).Magnitude or 0
+
+        if not ESPs[plr] then
+            ESPs[plr] = {
+                Box = Drawing.new("Square"),
+                Tracer = Drawing.new("Line"),
+                Name = Drawing.new("Text"),
+                Distance = Drawing.new("Text")
+            }
+            local e = ESPs[plr]
+            e.Box.Thickness = 1.5
+            e.Box.Color = Color3.fromRGB(255, 100, 100)
+            e.Tracer.Thickness = 1.4
+            e.Tracer.Color = Color3.fromRGB(100, 200, 255)
+            e.Name.Size = 14
+            e.Name.Color = Color3.new(1,1,1)
+            e.Name.Center = true
+            e.Name.Outline = true
+            e.Distance.Size = 13
+            e.Distance.Color = Color3.new(1, 0.9, 0.6)
+            e.Distance.Center = true
+            e.Distance.Outline = true
+        end
+
+        local e = ESPs[plr]
+
+        if onScreen then
+            local size = 1700 / screen.Z
+            local boxSize = Vector2.new(size*0.6, size*1.8)
+
+            if Config.ESP_Box then
+                e.Box.Size = boxSize
+                e.Box.Position = Vector2.new(screen.X - boxSize.X/2, screen.Y - boxSize.Y/2)
+                e.Box.Visible = true
+            else
+                e.Box.Visible = false
+            end
+
+            if Config.Tracers then
+                e.Tracer.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y - 40)
+                e.Tracer.To = Vector2.new(screen.X, screen.Y)
+                e.Tracer.Visible = true
+            else
+                e.Tracer.Visible = false
+            end
+
+            if Config.Names then
+                e.Name.Text = plr.Name
+                e.Name.Position = Vector2.new(screen.X, screen.Y - boxSize.Y/2 - 20)
+                e.Name.Visible = true
+            else
+                e.Name.Visible = false
+            end
+
+            if Config.Distance then
+                e.Distance.Text = math.floor(dist) .. "m"
+                e.Distance.Position = Vector2.new(screen.X, screen.Y - boxSize.Y/2 - 5)
+                e.Distance.Visible = true
+            else
+                e.Distance.Visible = false
+            end
+        else
+            e.Box.Visible = false
+            e.Tracer.Visible = false
+            e.Name.Visible = false
+            e.Distance.Visible = false
+        end
+    end
+end)
+
+-- Auto Interact + Noclip
+RunService.Heartbeat:Connect(function()
+    if Config.AutoInteract and LP.Character then
+        for _, prompt in ipairs(workspace:GetDescendants()) do
+            if prompt:IsA("ProximityPrompt") and prompt.Enabled then
+                local dist = (LP.Character.HumanoidRootPart.Position - prompt.Parent.Position).Magnitude
+                if dist < 12 then
+                    prompt:InputHoldBegin()
+                    task.wait(prompt.HoldDuration + 0.1)
+                    prompt:InputHoldEnd()
+                end
+            end
+        end
+    end
+end)
+
+RunService.Stepped:Connect(function()
+    if Config.Noclip and LP.Character then
+        for _, part in pairs(LP.Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+end)
+
 Main.Visible = true
-print("✅ Menu estilo Da Hood carregado!")
+print("✅ Menu carregado!")
